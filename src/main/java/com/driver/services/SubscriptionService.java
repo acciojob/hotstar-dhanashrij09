@@ -10,6 +10,7 @@ import com.driver.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -26,7 +27,29 @@ public class SubscriptionService {
 
         //Save The subscription Object into the Db and return the total Amount that user has to pay
 
-        return null;
+        Subscription subscription = new Subscription();
+        subscription.setId(subscriptionEntryDto.getUserId());
+        subscription.setSubscriptionType(subscriptionEntryDto.getSubscriptionType());
+        subscription.setNoOfScreensSubscribed(subscriptionEntryDto.getNoOfScreensRequired());
+
+        int amount;
+        if(subscription.getSubscriptionType().equals(SubscriptionType.BASIC)){
+            amount = 500 + 200 * subscriptionEntryDto.getNoOfScreensRequired();
+        }
+        else if(subscription.getSubscriptionType().equals(SubscriptionType.PRO)){
+            amount = 800 + 250 * subscriptionEntryDto.getNoOfScreensRequired();
+        }
+        else{
+            amount = 1000 + 350 * subscriptionEntryDto.getNoOfScreensRequired();
+        }
+        subscription.setTotalAmountPaid(amount);
+
+        User user = userRepository.findById(subscriptionEntryDto.getUserId()).get();
+        user.setSubscription(subscription);
+        subscription.setUser(user);
+        subscriptionRepository.save(subscription);
+
+        return subscription.getTotalAmountPaid();
     }
 
     public Integer upgradeSubscription(Integer userId)throws Exception{
@@ -35,7 +58,26 @@ public class SubscriptionService {
         //In all other cases just try to upgrade the subscription and tell the difference of price that user has to pay
         //update the subscription in the repository
 
-        return null;
+        User user = userRepository.findById(userId).get();
+        Subscription subscription = user.getSubscription();
+        SubscriptionType userSubscriptionType = user.getSubscription().getSubscriptionType();
+
+        int amount = 0;
+        if(userSubscriptionType.equals(SubscriptionType.ELITE)){
+            throw new Exception("Already the best Subscription");
+        }
+        else if(userSubscriptionType.equals(SubscriptionType.BASIC)){
+            int proAmount = 800 + 250 * user.getSubscription().getNoOfScreensSubscribed();
+            amount = proAmount - user.getSubscription().getTotalAmountPaid();
+            subscription.setSubscriptionType(SubscriptionType.PRO);
+        }
+        else if(userSubscriptionType.equals(SubscriptionType.PRO)){
+            int eliteAmount = 1000 + 350 * user.getSubscription().getNoOfScreensSubscribed();
+            amount = eliteAmount - user.getSubscription().getTotalAmountPaid();
+            subscription.setSubscriptionType(SubscriptionType.ELITE);
+        }
+        userRepository.save(user);
+        return amount;
     }
 
     public Integer calculateTotalRevenueOfHotstar(){
@@ -43,7 +85,24 @@ public class SubscriptionService {
         //We need to find out total Revenue of hotstar : from all the subscriptions combined
         //Hint is to use findAll function from the SubscriptionDb
 
-        return null;
+        List<Subscription> subscriptionList = subscriptionRepository.findAll();
+
+        List<Subscription> subscriptionsForBasic = new ArrayList<>();
+        List<Subscription> subscriptionsForPro = new ArrayList<>();
+        List<Subscription> subscriptionsForElite = new ArrayList<>();
+
+        for(Subscription subscription : subscriptionList){
+            if(subscription.getSubscriptionType().equals(SubscriptionType.BASIC)){
+                subscriptionsForBasic.add(subscription);
+            }
+            else if(subscription.getSubscriptionType().equals(SubscriptionType.PRO)){
+                subscriptionsForPro.add(subscription);
+            }
+            else{
+                subscriptionsForElite.add(subscription);
+            }
+        }
+        return (subscriptionsForBasic.size()+subscriptionsForPro.size()+subscriptionsForElite.size());
     }
 
 }
