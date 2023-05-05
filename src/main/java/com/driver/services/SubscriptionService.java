@@ -86,23 +86,12 @@ public class SubscriptionService {
         //Hint is to use findAll function from the SubscriptionDb
 
         List<Subscription> subscriptionList = subscriptionRepository.findAll();
-
-        List<Subscription> subscriptionsForBasic = new ArrayList<>();
-        List<Subscription> subscriptionsForPro = new ArrayList<>();
-        List<Subscription> subscriptionsForElite = new ArrayList<>();
-
+        int totalAmount = 0;
         for(Subscription subscription : subscriptionList){
-            if(subscription.getSubscriptionType().equals(SubscriptionType.BASIC)){
-                subscriptionsForBasic.add(subscription);
-            }
-            else if(subscription.getSubscriptionType().equals(SubscriptionType.PRO)){
-                subscriptionsForPro.add(subscription);
-            }
-            else{
-                subscriptionsForElite.add(subscription);
-            }
+            totalAmount += subscription.getTotalAmountPaid();
         }
-        return (subscriptionsForBasic.size()+subscriptionsForPro.size()+subscriptionsForElite.size());
+
+        return totalAmount;
     }
 
 }
